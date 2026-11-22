@@ -4,6 +4,8 @@ from discord.ext import commands
 import base64
 from datetime import datetime, timedelta, timezone
 from cryptography.hazmat.primitives.asymmetric import ed25519
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # ================= CONFIGURACIÓN =================
 DISCORD_TOKEN = "MTU3NDE1MjUwMzY4NjIwNTQ4MQ.GWia9R._rWzmeozt-wGcfUhLpPQegogEAly7Z2boerHVM"
@@ -116,5 +118,16 @@ async def getkey(interaction: discord.Interaction, device_id: str, dias: int):
 
     except Exception as e:
         await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+threading.Thread(
+    target=lambda: HTTPServer(("0.0.0.0", 8000), HealthHandler).serve_forever(),
+    daemon=True
+).start()
 
 bot.run(DISCORD_TOKEN)
