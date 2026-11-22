@@ -1,3 +1,4 @@
+import os
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -125,9 +126,11 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"OK")
 
+port = int(os.environ.get("PORT", 10000))
 threading.Thread(
-    target=lambda: HTTPServer(("0.0.0.0", 8000), HealthHandler).serve_forever(),
+    target=lambda: HTTPServer(("0.0.0.0", port), HealthHandler).serve_forever(),
     daemon=True
 ).start()
 
 bot.run(DISCORD_TOKEN)
+
