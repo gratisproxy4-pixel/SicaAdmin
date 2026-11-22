@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SICA EXTERNAL • Key Generator</title>
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        :root {
+            --bg: #08080a;
+            --card: #121216;
+            --border: #26262e;
+            --red: #e6192e;
+            --red-glow: rgba(230, 25, 46, 0.35);
+            --text: #ffffff;
+            --muted: #8e8e98;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body {
+            margin: 0; background: var(--bg); color: var(--text);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+        .container {
+            width: 100%; max-width: 400px; background: var(--card);
+            border: 1px solid var(--border); border-radius: 20px;
+            padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+        .header { text-align: center; margin-bottom: 24px; }
+        .badge {
+            display: inline-block; background: rgba(230, 25, 46, 0.15);
+            color: var(--red); border: 1px solid rgba(230, 25, 46, 0.4);
+            font-size: 11px; font-weight: 700; padding: 4px 10px;
+            border-radius: 20px; letter-spacing: 1px; margin-bottom: 8px;
+        }
+        h1 { margin: 0; font-size: 24px; letter-spacing: 1.5px; font-weight: 800; }
+        h1 span { color: var(--red); }
+        p.sub { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+        label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; }
+        input, select {
+            width: 100%; padding: 14px; background: #0b0b0e;
+            border: 1px solid var(--border); border-radius: 12px;
+            color: #fff; font-size: 15px; margin-bottom: 16px; outline: none;
+            transition: border 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--red); }
+        button {
+            width: 100%; padding: 15px; background: var(--red);
+            color: #fff; border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 6px 20px var(--red-glow);
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        button:active { transform: scale(0.98); }
+        .result-box {
+            display: none; margin-top: 20px; padding: 16px;
+            background: #0b0b0e; border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+        .info-row {
+            display: flex; justify-content: space-between;
+            font-size: 13px; margin-bottom: 8px;
+        }
+        .info-row span:first-child { color: var(--muted); }
+        .info-row span:last-child { font-weight: 600; }
+        .key-output {
+            background: #16161c; padding: 12px; border-radius: 8px;
+            font-family: monospace; font-size: 12px; color: #ff4d5e;
+            word-break: break-all; margin: 12px 0; border: 1px dashed #333;
+        }
+        .btn-copy {
+            background: #1f1f27; box-shadow: none; border: 1px solid var(--border);
+        }
+        .btn-copy.copied { background: #16a34a; border-color: #16a34a; }
+        .hidden { display: none; }
+        .error { color: var(--red); font-size: 13px; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="badge">ADMIN PANEL • 3105</div>
+        <h1>SICA <span>EXTERNAL</span></h1>
+        <p class="sub">Generador de Licencias Únicas</p>
+    </div>
+
+    <!-- PANTALLA DE BLOQUEO -->
+    <div id="loginView">
+        <label>Contraseña de Administrador</label>
+        <input type="password" id="adminPassInput" placeholder="Ingresa tu clave...">
+        <button onclick="unlockPanel()">ACCEDER AL PANEL</button>
+        <div id="loginError" class="error"></div>
+    </div>
+
+    <!-- GENERADOR DE LICENCIAS -->
+    <div id="generatorView" class="hidden">
+        <label>Device ID del Cliente</label>
+        <input type="text" id="deviceId" placeholder="Ej. A8F9-21C4" style="text-transform: uppercase;">
+
+        <label>Duración de la Licencia</label>
+        <select id="daysSelect">
+            <option value="1">1 Día</option>
+            <option value="7">7 Días</option>
+            <option value="15">15 Días</option>
+            <option value="30" selected>30 Días (1 Mes)</option>
+            <option value="3650">Lifetime (Permanente)</option>
+        </select>
+
+        <button onclick="generateKey()">GENERAR LICENCIA</button>
+
+        <div id="resultBox" class="result-box">
+            <div class="info-row"><span>Dispositivo:</span><span id="resDevice">-</span></div>
+            <div class="info-row"><span>Duración:</span><span id="resDuration">-</span></div>
+            <div class="info-row"><span>Vencimiento:</span><span id="resExpire">-</span></div>
+            <div class="key-output" id="resKey"></div>
+            <button id="copyBtn" class="btn-copy" onclick="copyKey()">📋 COPIAR LICENCIA</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ================= CONFIGURACIÓN =================
+    const ADMIN_PASS = "SICA"; // Cambia esto por la contraseña que quieras
+    const PRIVATE_KEY_B64 = "7k9P2mX8vQ4wR1zL6nB3yC5jH0fD8sA2eG7uI9oP4qW=";
+    // =================================================
+
+    function unlockPanel() {
+        const input = document.getElementById("adminPassInput").value;
+        if (input === ADMIN_PASS) {
+            document.getElementById("loginView").classList.add("hidden");
+            document.getElementById("generatorView").classList.remove("hidden");
+        } else {
+            document.getElementById("loginError").innerText = "⛔ Contraseña incorrecta";
+        }
+    }
+
+    function b64ToUint8(b64) {
+        const bin = atob(b64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return arr;
+    }
+
+    function uint8ToUrlSafeB64(arr) {
+        let bin = "";
+        for (let i = 0; i < arr.length; i++) bin += String.fromCharCode(arr[i]);
+        return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    }
+
+    function generateKey() {
+        const deviceId = document.getElementById("deviceId").value.trim().toUpperCase();
+        if (!deviceId) {
+            alert("Ingresa el Device ID del cliente.");
+            return;
+        }
+
+        const select = document.getElementById("daysSelect");
+        const days = parseInt(select.value);
+        const durationText = select.options[select.selectedIndex].text;
+
+        // Calcular fecha de vencimiento UTC (YYYY-MM-DD)
+        const now = new Date();
+        now.setUTCDate(now.getUTCDate() + days);
+        const yyyy = now.getUTCFullYear();
+        const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+        const dd = String(now.getUTCDate()).padStart(2, "0");
+        const expDateStr = `${yyyy}-${mm}-${dd}`;
+
+        // Crear payload y firmar con Ed25519 (seed de 32 bytes)
+        const seed = b64ToUint8(PRIVATE_KEY_B64);
+        const keyPair = nacl.sign.keyPair.fromSeed(seed);
+
+        const encoder = new TextEncoder();
+        const payloadBytes = encoder.encode(`${deviceId}|${expDateStr}`);
+        const signature = nacl.sign.detached(payloadBytes, keyPair.secretKey);
+
+        // Unir payload + "::" + signature
+        const sep = encoder.encode("::");
+        const combined = new Uint8Array(payloadBytes.length + sep.length + signature.length);
+        combined.set(payloadBytes, 0);
+        combined.set(sep, payloadBytes.length);
+        combined.set(signature, payloadBytes.length + sep.length);
+
+        const finalKey = "SICA-" + uint8ToUrlSafeB64(combined);
+
+        // Mostrar resultado
+        document.getElementById("resDevice").innerText = deviceId;
+        document.getElementById("resDuration").innerText = durationText;
+        document.getElementById("resExpire").innerText = expDateStr;
+        document.getElementById("resKey").innerText = finalKey;
+        document.getElementById("resultBox").style.display = "block";
+
+        const copyBtn = document.getElementById("copyBtn");
+        copyBtn.innerText = "📋 COPIAR LICENCIA";
+        copyBtn.classList.remove("copied");
+    }
+
+    function copyKey() {
+        const keyText = document.getElementById("resKey").innerText;
+        navigator.clipboard.writeText(keyText).then(() => {
+            const copyBtn = document.getElementById("copyBtn");
+            copyBtn.innerText = "✅ ¡LICENCIA COPIADA!";
+            copyBtn.classList.add("copied");
+        });
+    }
+</script>
+
+</body>
+</html>
